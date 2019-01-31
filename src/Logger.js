@@ -16,8 +16,9 @@ const onFinished = require('on-finished')
  * Logs http request using AdonisJs in built logger
  */
 class Logger {
-  constructor ({ request, response }, Logger) {
+  constructor ({ request, response, auth }, Logger) {
     this.request = request
+    this.auth = auth
     this.res = response.response
     this.Logger = Logger
   }
@@ -86,7 +87,7 @@ class Logger {
    *
    * @return {void}
    */
-  log (url, ip, method, input, statusCode, startedAt, code) {
+  log (url, ip, method, input, statusCode, userId, startedAt, code) {
     const ms = prettyMs(this._diffHrTime(startedAt))
     const logLevel = this._getLogLevel(statusCode)
 
@@ -94,11 +95,11 @@ class Logger {
      * Log normally when json is not set to true
      */
     if (!this.isJson) {
-      this.Logger[logLevel]('%s %s %s %s %s %s', ip, method, input, statusCode, url, ms)
+      this.Logger[logLevel]('%s %s %s %s %s %s %s', ip, method, input, statusCode, userId, url, ms)
       return
     }
 
-    const payload = { ip, method, input, statusCode, url, ms }
+    const payload = { ip, method, input, statusCode, userId, url, ms }
     if (code) {
       payload.code = code
     }
@@ -116,11 +117,12 @@ class Logger {
     const start = process.hrtime()
     const url = this.request.url()
     const method = this.request.method()
-    const input = this.request.input()
+    const input = this.request.input() || {}
     const ip = this.request.ip()
+    const userId = this.auth.user && this.auth.user.id ? this.auth.user.id : null
 
     onFinished(this.res, (error, res) => {
-      this.log(url, ip, method, input, res.statusCode, start, error ? error.code : null)
+      this.log(url, ip, method, JSON.stringify(input), res.statusCode, userId, start, error ? error.code : null)
     })
   }
 }
