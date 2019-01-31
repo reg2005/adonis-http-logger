@@ -86,7 +86,7 @@ class Logger {
    *
    * @return {void}
    */
-  log (url, method, statusCode, startedAt, code) {
+  log (url, ip, method, input, statusCode, startedAt, code) {
     const ms = prettyMs(this._diffHrTime(startedAt))
     const logLevel = this._getLogLevel(statusCode)
 
@@ -94,11 +94,11 @@ class Logger {
      * Log normally when json is not set to true
      */
     if (!this.isJson) {
-      this.Logger[logLevel]('%s %s %s %s', method, statusCode, url, ms)
+      this.Logger[logLevel]('%s %s %s %s %s %s', ip, method, input, statusCode, url, ms)
       return
     }
 
-    const payload = { method, statusCode, url, ms }
+    const payload = { ip, method, input, statusCode, url, ms }
     if (code) {
       payload.code = code
     }
@@ -116,9 +116,11 @@ class Logger {
     const start = process.hrtime()
     const url = this.request.url()
     const method = this.request.method()
+    const input = this.request.input()
+    const ip = this.request.ip()
 
     onFinished(this.res, (error, res) => {
-      this.log(url, method, res.statusCode, start, error ? error.code : null)
+      this.log(url, ip, method, input, res.statusCode, start, error ? error.code : null)
     })
   }
 }
